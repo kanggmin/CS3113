@@ -94,34 +94,24 @@ void Map::render(ShaderProgram* program)
 
 bool Map::is_solid(glm::vec3 position, float* penetration_x, float* penetration_y)
 {
-    // The penetration between the map and the object
-    // The reason why these are pointers is because we want to reassign values
-    // to them in case that we are colliding. That way the object that originally
-    // passed them as values will keep track of these distances
-    // inb4: we're passing by reference
     *penetration_x = 0;
     *penetration_y = 0;
 
-    // If we are out of bounds, it is not solid
     if (position.x < m_left_bound || position.x > m_right_bound)  return false;
     if (position.y > m_top_bound || position.y < m_bottom_bound) return false;
 
     int tile_x = floor((position.x + (m_tile_size / 2)) / m_tile_size);
-    int tile_y = -(ceil(position.y - (m_tile_size / 2))) / m_tile_size; // Our array counts up as Y goes down.
+    int tile_y = -(ceil(position.y - (m_tile_size / 2))) / m_tile_size; 
 
-    // If the tile index is negative or greater than the dimensions, it is not solid
     if (tile_x < 0 || tile_x >= m_width)  return false;
     if (tile_y < 0 || tile_y >= m_height) return false;
 
-    // If the tile index is 0 i.e. an open space, it is not solid
     int tile = m_level_data[tile_y * m_width + tile_x];
     if (tile == 0) return false;
 
-    // And we likely have some overlap
     float tile_center_x = (tile_x * m_tile_size);
     float tile_center_y = -(tile_y * m_tile_size);
 
-    // And because we likely have some overlap, we adjust for that
     *penetration_x = (m_tile_size / 2) - fabs(position.x - tile_center_x);
     *penetration_y = (m_tile_size / 2) - fabs(position.y - tile_center_y);
 

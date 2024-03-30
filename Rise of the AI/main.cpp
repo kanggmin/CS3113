@@ -207,6 +207,7 @@ GLuint load_texture(const char* filepath)
 }
 
 void throw_projectile(Entity* user, ProjectileType proj) {
+    //define projectile base on what type
     if (proj == SHURIKEN) {
         Entity* attack = new Entity(ATTACK, user->get_position(), 7.0f, glm::vec3(0.0f, 0.0f, 0.0f), load_texture(SHURIKEN_SPRITE),
             new int[4] { 0, 3, 2, 1 }, new int[4] { 0, 1, 2, 3 }, 4, 0, 0.01f, 4, 1, 0.5f, 0.5f);
@@ -388,12 +389,14 @@ void process_input()
 
 void update()
 {
+    //check how many enemies alive
     int alive = ENEMY_COUNT;
     for (int i = 0; i < ENEMY_COUNT; i++) {
         if (!g_state.enemies[i].get_active()) {
             alive -= 1;
         }
     }
+    //end game is all enemies dead or player dead
     if (alive == 0) {
         g_game_is_over = true;
         winner = true;
@@ -416,6 +419,7 @@ void update()
         return;
     }
     
+    //update player, projectiles, and enemies
     while (delta_time >= FIXED_TIMESTEP)
     {
         if (!g_game_is_over) {
@@ -454,6 +458,7 @@ void render()
 
     glClear(GL_COLOR_BUFFER_BIT);
     
+    //render player, enemies, and projectiles
     g_state.player->render(&g_shader_program);
     g_state.map->render(&g_shader_program);
 
@@ -466,7 +471,7 @@ void render()
             proj->render(&g_shader_program);
         }
     }
-
+    //render end game message
     if (g_game_is_over && winner) {
         draw_text(font_texture_id, "YOU WIN!", 1, 0.1, g_state.player->get_position() + glm::vec3(-4.0f, 2.0f, 0.0f));
     }

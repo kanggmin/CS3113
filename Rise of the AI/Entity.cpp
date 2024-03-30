@@ -126,6 +126,7 @@ void Entity::ai_activate(Entity* player, float delta_time)
 
 void Entity::ai_walk()
 {
+    //keep walking and change direction if walk into a wall
     if (m_facing_direction == "right") {
         move_right();
     }
@@ -135,6 +136,7 @@ void Entity::ai_walk()
 }
 
 void Entity::ai_jump() {
+    //jump around until hits a wall then turn around
     if (m_collided_top || m_collided_bottom) {
         if (m_facing_direction == "right") {
             move_right();
@@ -147,6 +149,8 @@ void Entity::ai_jump() {
 }
 
 void Entity::ai_shoot(Entity* player, float delta_time) {
+    //jump in place until player approaches
+    //shoot projectiles every second when attacking
     switch (m_ai_state) {
     case IDLE:
         if (m_collided_top || m_collided_bottom) {
@@ -229,6 +233,7 @@ void Entity::update(float delta_time, Entity* player, Entity* objects, int objec
 
     if (m_entity_type == ENEMY) { ai_activate(player, delta_time); }
 
+    //update jump
     if (m_is_jumping)
     {
         m_jumps -= 1;
@@ -239,11 +244,13 @@ void Entity::update(float delta_time, Entity* player, Entity* objects, int objec
         m_jumps = 1;
     }
 
+    ///remove attack when collides with wall
     if (m_entity_type == ATTACK) {
         if (m_collided_bottom || m_collided_top || m_collided_left || m_collided_right) {
             m_is_active = false;
         }
     }
+    //change enemy direction
     else if (m_entity_type == ENEMY) {
         if (m_collided_right) {
             m_facing_direction = "left";
@@ -265,6 +272,7 @@ void const Entity::check_collision_y(Entity* collidable_entities, int collidable
 
         if (check_collision(collidable_entity))
         {
+            //kill entities in certain interactions
             if (m_entity_type == PLAYER && collidable_entity->m_entity_type == ENEMY) {
                 m_is_active = false;
             }
@@ -300,6 +308,7 @@ void const Entity::check_collision_x(Entity* collidable_entities, int collidable
 
         if (check_collision(collidable_entity))
         {
+            //kill entities in certain interactions
             if (m_entity_type == PLAYER && collidable_entity->m_entity_type == ENEMY) {
                 m_is_active = false;
             }
@@ -383,6 +392,7 @@ void const Entity::check_collision_y(Map* map)
         m_collided_bottom = true;
 
     }
+    //kill entities in certain interactions
     if (m_collided_bottom == true || m_collided_top == true) {
         if (m_entity_type == ENEMY_ATTACK) {
             kill();
@@ -412,6 +422,7 @@ void const Entity::check_collision_x(Map* map)
 
         m_collided_right = true;
     }
+    //kill entities in certain interactions
     if (m_collided_left == true || m_collided_right == true) {
         if (m_entity_type == ENEMY_ATTACK) {
             kill();
