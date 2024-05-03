@@ -8,6 +8,11 @@
 * Academic Misconduct.
 **/
 
+/*
+TODO:
+
+*/
+
 #include <Windows.h>
 #ifdef _WINDOWS
 #include <GL/glew.h>
@@ -16,8 +21,6 @@
 //define necessary files
 #define GL_GLEXT_PROTOTYPES 1
 #define FIXED_TIMESTEP 0.0166666f
-#define LEVEL1_WIDTH 30
-#define LEVEL1_HEIGHT 10
 
 #include "Utility.h"
 #include "Scene.h"
@@ -34,7 +37,7 @@ AUDIO_CHAN_AMT = 2,
 AUDIO_BUFF_SIZE = 4096;
 
 const char BGM_FILEPATH[] = "assets/sfx/music.mp3";
-const int LOOP_FOREVER = -1; 
+const int LOOP_FOREVER = -1;
 
 const int PLAY_ONCE = 0,
 NEXT_CHNL = -1,
@@ -43,7 +46,7 @@ MILS_IN_SEC = 1000,
 ALL_SFX_CHN = -1;
 
 Mix_Music* g_music;
-Mix_Chunk* g_jumping_sfx;
+Mix_Chunk* g_pew_sfx;
 
 using namespace std;
 
@@ -94,14 +97,17 @@ Level3* g_level_3;
 LoseMenu* g_lose_menu;
 WinMenu* g_win_menu;
 
+int* mouseX;
+int* mouseY;
+
 int g_player_lives = 3;
 float dmg_timer = 0;
 
-void jump_sfx() {
-    Mix_PlayChannel( NEXT_CHNL, g_jumping_sfx, PLAY_ONCE );
-    Mix_FadeInChannel( NEXT_CHNL, g_jumping_sfx, PLAY_ONCE, MILS_IN_SEC);
-    Mix_Volume(ALL_SFX_CHN, MIX_MAX_VOLUME / 2);
-    Mix_VolumeChunk(g_jumping_sfx, MIX_MAX_VOLUME / 4);
+void pew_sfx() {
+    Mix_PlayChannel(NEXT_CHNL, g_pew_sfx, PLAY_ONCE);
+    Mix_FadeInChannel(NEXT_CHNL, g_pew_sfx, PLAY_ONCE, MILS_IN_SEC);
+    Mix_Volume(ALL_SFX_CHN, MIX_MAX_VOLUME / 4);
+    Mix_VolumeChunk(g_pew_sfx, MIX_MAX_VOLUME / 8);
 }
 
 void switch_to_scene(Scene* scene)
@@ -139,14 +145,16 @@ void initialise() {
 
     glClearColor(BG_RED, BG_GREEN, BG_BLUE, BG_OPACITY);
 
+    mouseX = new int;
+    mouseY = new int;
 
     //music setup
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-    Mix_OpenAudio( CD_QUAL_FREQ, MIX_DEFAULT_FORMAT, AUDIO_CHAN_AMT, AUDIO_BUFF_SIZE );
+    Mix_OpenAudio(CD_QUAL_FREQ, MIX_DEFAULT_FORMAT, AUDIO_CHAN_AMT, AUDIO_BUFF_SIZE);
     g_music = Mix_LoadMUS(BGM_FILEPATH);
     Mix_PlayMusic(g_music, LOOP_FOREVER);
-    Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
-    g_jumping_sfx = Mix_LoadWAV("assets/sfx/jump.wav");
+    Mix_VolumeMusic(MIX_MAX_VOLUME / 8);
+    g_pew_sfx = Mix_LoadWAV("assets/sfx/pew.wav");
 
     //levels setup
     g_menu = new MainMenu();
@@ -177,25 +185,32 @@ void process_input()
         case SDL_WINDOWEVENT_CLOSE:
             g_game_is_running = false;
             break;
+        case SDL_MOUSEMOTION:
+            SDL_GetMouseState(mouseX, mouseY);
+            *mouseX -= 320;
+            *mouseY = 240 - *mouseY;         
+            break;
+        case SDL_MOUSEBUTTONDOWN:
+            if (g_game_is_playing) {
+                if (g_current_scene->g_state.player->can_shoot) {
+                    pew_sfx();
+                }
+                g_current_scene->g_state.player->shoot(mouseX, mouseY);
+            }
+            break;
         case SDL_KEYDOWN:
             switch (event.key.keysym.sym) {
+            case SDLK_m:
+                if (g_game_is_playing) {
+                    
+                    break;
+                }
             case SDLK_q:
                 //quit game
                 g_game_is_running = false;
                 break;
-
-            case SDLK_SPACE:
-                //jumpn
-                if (g_game_is_playing) {
-                    if (g_current_scene->g_state.player->m_collided_bottom == true)
-                    {
-                        g_current_scene->g_state.player->m_is_jumping = true;
-                        jump_sfx();
-                    }
-                }
-                break;
             case SDLK_RETURN:
-                if (!g_game_is_playing) {
+                if (!g_game_is_playing && g_current_scene == g_menu) {
                     switch_to_scene(g_level_1);
                     g_player_lives = 3;
                     g_game_is_playing = true;
@@ -211,15 +226,23 @@ void process_input()
 
     const Uint8* key_state = SDL_GetKeyboardState(NULL);
     if (g_game_is_playing) {
-        if (key_state[SDL_SCANCODE_LEFT])
+        if (key_state[SDL_SCANCODE_A])
         {
             g_current_scene->g_state.player->move_left();
             g_current_scene->g_state.player->m_animation_indices = g_current_scene->g_state.player->m_walking[g_current_scene->g_state.player->LEFT];
         }
-        else if (key_state[SDL_SCANCODE_RIGHT])
+        if (key_state[SDL_SCANCODE_D])
         {
             g_current_scene->g_state.player->move_right();
             g_current_scene->g_state.player->m_animation_indices = g_current_scene->g_state.player->m_walking[g_current_scene->g_state.player->RIGHT];
+        }
+        if (key_state[SDL_SCANCODE_W]) {
+            g_current_scene->g_state.player->move_up();
+            g_current_scene->g_state.player->m_animation_indices = g_current_scene->g_state.player->m_walking[g_current_scene->g_state.player->UP];
+        }
+        if (key_state[SDL_SCANCODE_S]) {
+            g_current_scene->g_state.player->move_down();
+            g_current_scene->g_state.player->m_animation_indices = g_current_scene->g_state.player->m_walking[g_current_scene->g_state.player->DOWN];
         }
         // This makes sure that the player can't move faster diagonally
         if (glm::length(g_current_scene->g_state.player->get_movement()) > 1.0f)
@@ -242,7 +265,7 @@ void update()
         g_accumulator = delta_time;
         return;
     }
-    
+
     //update player, projectiles, and enemies
     while (delta_time >= FIXED_TIMESTEP)
     {
@@ -250,17 +273,15 @@ void update()
         delta_time -= FIXED_TIMESTEP;
     }
     if (g_game_is_playing) {
-        if (g_current_scene->g_state.portal->player_reached_portal == true && g_current_scene == g_level_1) {
+        if (g_current_scene == g_level_1 && g_level_1->m_enemies_alive == 0) {
             switch_to_scene(g_level_2);
-            return;
         }
-        else if (g_current_scene->g_state.portal->player_reached_portal == true && g_current_scene == g_level_2) {
+        else if (g_current_scene == g_level_2 && g_level_2->m_enemies_alive == 0) {
             switch_to_scene(g_level_3);
-            return;
         }
-        else if (g_current_scene->g_state.portal->player_reached_portal == true && g_current_scene == g_level_3) {
-            g_game_is_playing = false;
+        else if (g_current_scene == g_level_3 && g_current_scene->g_state.boss->get_active() == false && !g_current_scene->g_state.noBoss ) {
             switch_to_scene(g_win_menu);
+            g_game_is_playing = false;
             return;
         }
         if (g_current_scene->g_state.player->hit == true && dmg_timer >= 0.5) {
@@ -276,7 +297,8 @@ void update()
         g_accumulator = delta_time;
 
         g_view_matrix = glm::mat4(1.0f);
-        g_view_matrix = glm::translate(g_view_matrix, glm::vec3(-g_current_scene->g_state.player->get_position().x, 0.0f, 0.0f));
+        g_view_matrix = glm::translate(g_view_matrix, glm::vec3(-g_current_scene->g_state.player->get_position().x, 
+            -g_current_scene->g_state.player->get_position().y, 0.0f));
 
         if (g_player_lives <= 0) {
             g_game_is_playing = false;
@@ -294,12 +316,13 @@ void render()
     g_shader_program.SetViewMatrix(g_view_matrix);
 
     glClear(GL_COLOR_BUFFER_BIT);
-    
+
     g_current_scene->render(&g_shader_program);
     if (g_game_is_playing) {
         Utility::draw_text(&g_shader_program, font_texture_id, to_string(g_player_lives), 1, 0.1,
             g_current_scene->g_state.player->get_position() + glm::vec3(0.0, 1.0, 0.0));
     }
+
     SDL_GL_SwapWindow(g_display_window);
 }
 

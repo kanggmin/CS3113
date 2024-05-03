@@ -1,0 +1,9 @@
+﻿  main.cpp
+C:\CS3113\Final\Final\Entity.h(143,55): warning C4244: 'return': conversion from 'const float' to 'const int', possible loss of data
+  (compiling source file 'main.cpp')
+  
+C:\CS3113\Final\Final\Entity.h(144,55): warning C4244: 'return': conversion from 'const float' to 'const int', possible loss of data
+  (compiling source file 'main.cpp')
+  
+C:\CS3113\Final\Final\main.cpp(322,94): warning C4305: 'argument': truncation from 'double' to 'float'
+  Final.vcxproj -> C:\CS3113\Final\Debug\Final.exe
